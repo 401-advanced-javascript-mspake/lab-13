@@ -26,6 +26,7 @@ describe('Auth Router', () => {
       
       let encodedToken;
       let id;
+      let key;
       
       it('can create one', () => {
         return mockRequest.post('/signup')
@@ -47,6 +48,53 @@ describe('Auth Router', () => {
           });
       });
 
+      it('can assign a key', () => {
+        return mockRequest.post('/key')
+          .set('authorization', `Bearer ${encodedToken}`)
+          .then(results => {
+            key = results.text;
+            var verifiedKey = jwt.verify(results.text, process.env.SECRET);
+            expect(verifiedKey.type).toEqual('key');
+            expect(results.status).toBe(200);
+          });
+      });
+
+      describe('protected route', () => {
+        it('can access the protected route with a token', () => {
+          return mockRequest.get('/protected-route')
+            .set('authorization', `Bearer ${encodedToken}`)
+            .then(results => {
+              expect(results.status).toBe(200);
+            });
+        });
+
+        it('can access the protected route with a key', () => {
+          return mockRequest.get('/protected-route')
+            .set('authorization', `Bearer ${key}`)
+            .then(results => {
+              expect(results.status).toBe(200);
+            });
+        });
+
+        it('single use tokens can only be used once', () => {
+          return mockRequest.get('/protected-route')
+            .set('authorization', `Bearer ${encodedToken}`)
+            .then(results => {
+              if(process.env.SINGLE_USE) {
+                expect(results.status).toBe(500);
+              }
+            });
+
+        });
+
+        it('keys can be used more than once', () => {
+          return mockRequest.get('/protected-route')
+            .set('authorization', `Bearer ${key}`)
+            .then(results => {
+              expect(results.status).toBe(200);
+            });
+        });
+      });
     });
     
   });
