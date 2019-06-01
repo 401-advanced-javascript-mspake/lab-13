@@ -32,8 +32,13 @@ authRouter.get('/oauth', (req,res,next) => {
     .catch(next);
 });
 
-authRouter.get('/protected-route', auth, (request, response, next) => {
-  response.status(200).send();
+authRouter.get('/protected-route', auth, (req, res, next) => {
+  res.status(200).send();
+});
+
+authRouter.post('/key', auth, (req, res, next) => {
+  const key = req.user.generateKey();
+  res.status(200).send(key);
 });
 
 module.exports = authRouter;
